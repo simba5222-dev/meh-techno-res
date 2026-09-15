@@ -1,0 +1,7 @@
+# Запретить просмотр содержимого директорий
+Options -Indexes
+
+# Запретить прямой доступ к служебным файлам
+<FilesMatch "\.(sql|md|log|ini)$">
+    Require all denied
+</FilesMatch>

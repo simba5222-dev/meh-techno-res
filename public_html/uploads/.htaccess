@@ -1,0 +1,6 @@
+# Запрет исполнения PHP-скриптов в папке загрузок (защита от подмены файлов)
+php_flag engine off
+
+<FilesMatch "\.(php|phtml|php3|php4|php5|php7|phar|cgi|pl)$">
+    Require all denied
+</FilesMatch>

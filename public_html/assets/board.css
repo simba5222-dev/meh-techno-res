@@ -1,0 +1,109 @@
+/* =====================================================================
+   Доска задач: компактная раскладка, чтобы все колонки помещались
+   в один экран без горизонтальной прокрутки.
+   Подключается после style.css и перекрывает его правила.
+   ===================================================================== */
+
+@media (min-width: 1051px) {
+    .kanban {
+        gap: 10px;
+        align-items: stretch;   /* колонки одной высоты: вся площадь принимает карточку */
+    }
+
+    /* Колонки делят ширину поровну и сжимаются, а не растягивают доску */
+    .kanban-col {
+        flex: 1 1 0;
+        min-width: 0;
+        max-height: 78vh;
+        min-height: 220px;
+    }
+
+    /* Тело колонки растягивается на всю оставшуюся высоту,
+       иначе в пустой колонке некуда бросить карточку. */
+    .kanban-col-body {
+        flex: 1 1 auto;
+    }
+
+    .kanban-col-head {
+        padding: 10px 12px;
+        font-size: 0.78rem;
+        gap: 6px;
+    }
+
+    .kanban-col-body {
+        padding: 8px;
+        gap: 6px;
+    }
+
+    .task-card {
+        padding: 10px 11px;
+    }
+
+    .task-card-title {
+        font-size: 0.85rem;
+        line-height: 1.3;
+        margin-bottom: 3px;
+    }
+
+    .task-card-eq,
+    .task-card-object,
+    .task-card-fitters,
+    .task-card-due,
+    .task-card-photos {
+        font-size: 0.72rem;
+    }
+
+    .task-card-meta {
+        gap: 4px;
+    }
+
+    .task-card-meta .assignee {
+        font-size: 0.72rem;
+    }
+
+    /* Длинные названия не распирают колонку */
+    .task-card-title,
+    .task-card-eq,
+    .task-card-object,
+    .task-card-fitters {
+        overflow-wrap: anywhere;
+    }
+
+    /* На широком экране статус меняется перетаскиванием,
+       выпадающий список только занимал бы место */
+    .task-card-move {
+        display: none;
+    }
+}
+
+/* Планшеты и телефоны: колонки идут вертикально, перетаскивание
+   конфликтует с прокруткой, поэтому список статусов остаётся. */
+@media (max-width: 1050px) {
+    .kanban-hint {
+        display: none;
+    }
+}
+
+
+/* ---------------------------------------------------------------------
+   Карточка задачи — ссылка, и браузер по умолчанию начинает своё
+   перетаскивание ссылки, перехватывая жест. Отключаем это, иначе
+   собственный перенос карточек не работает живой мышью.
+   --------------------------------------------------------------------- */
+.task-card,
+.task-card * {
+    -webkit-user-drag: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* В полях ввода выделение текста нужно оставить */
+.task-card select,
+.task-card input,
+.task-card textarea {
+    user-select: auto;
+    -webkit-user-select: auto;
+}
+
+.task-card-link { cursor: grab; }
+.task-card-dragging, .task-card-ghost { cursor: grabbing; }

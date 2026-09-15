@@ -1,0 +1,11 @@
+# Реквизиты БД — живут только на хостинге. Шаблон: public_html/config.php.example
+public_html/config.php
+
+# Фотоотчёты по задачам — пользовательские данные, не код
+public_html/uploads/tasks/*
+!public_html/uploads/tasks/.gitkeep
+
+# Служебное
+.DS_Store
+*.log
+*.sql
