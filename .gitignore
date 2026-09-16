@@ -9,3 +9,6 @@ public_html/uploads/tasks/*
 .DS_Store
 *.log
 *.sql
+
+# Исторические SQL в archive/ — часть истории проекта
+!archive/db-2026-09-05/*.sql

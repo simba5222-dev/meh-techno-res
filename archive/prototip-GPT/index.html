@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Техноресурс — Служба механиков</title>
+<style>
+:root{
+  --bg:#f4f7fb; --card:#fff; --text:#172033; --muted:#6b7588; --line:#e6eaf0;
+  --accent:#2457e6; --accent2:#eef3ff; --red:#d93232; --orange:#e48a16; --green:#1b8e5a;
+  --shadow:0 10px 30px rgba(30,47,80,.07); --radius:18px;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
+button,input,select,textarea{font:inherit}
+.app{min-height:100vh;display:grid;grid-template-columns:250px 1fr}
+.sidebar{background:#111a2d;color:#fff;padding:24px 16px;position:sticky;top:0;height:100vh}
+.brand{font-weight:800;font-size:20px;padding:4px 10px 24px}.brand span{color:#76a2ff}
+.nav button{width:100%;border:0;background:none;color:#afbad0;text-align:left;padding:12px 14px;border-radius:12px;cursor:pointer;margin:2px 0;font-weight:600}
+.nav button.active,.nav button:hover{background:#1e2b46;color:#fff}
+.userbox{position:absolute;bottom:18px;left:16px;right:16px;border-top:1px solid #28344c;padding-top:16px;color:#c2cade;font-size:13px}
+.main{padding:28px 32px 50px}
+.topbar{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:24px}.topbar h1{margin:0;font-size:28px}.sub{color:var(--muted);font-size:14px;margin-top:4px}
+.primary{border:0;background:var(--accent);color:#fff;border-radius:12px;padding:11px 16px;font-weight:700;cursor:pointer}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(140px,1fr));gap:14px;margin-bottom:20px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+.kpi b{font-size:28px;display:block;margin-top:6px}.kpi small{color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1.25fr .75fr;gap:18px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.panel-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;align-items:center}
+.panel-head h2{font-size:18px;margin:0}.panel-body{padding:0}
+.table-wrap{overflow:auto}
+table{border-collapse:collapse;width:100%}th,td{padding:13px 16px;border-bottom:1px solid var(--line);font-size:14px;text-align:left;white-space:nowrap}
+th{font-size:12px;text-transform:uppercase;color:var(--muted);letter-spacing:.03em;background:#fafbfc}
+tr.clickable{cursor:pointer}tr.clickable:hover{background:#fafcff}
+.badge{display:inline-flex;align-items:center;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:700;background:#eef1f5;color:#485267}
+.badge.red{background:#fff0f0;color:#c53030}.badge.orange{background:#fff5e7;color:#a65d00}.badge.green{background:#eaf8f1;color:#14754a}.badge.blue{background:#eef3ff;color:#2f5dcc}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:7px;background:#9aa3b2}
+.dot.green{background:#25a66a}.dot.red{background:#df4545}.dot.orange{background:#f0a23c}.dot.blue{background:#4e77ea}
+.mechanic{padding:16px 18px;border-bottom:1px solid var(--line)}.mechanic:last-child{border:0}.mrow{display:flex;justify-content:space-between;gap:12px}.mechanic b{font-size:14px}.mechanic p{margin:6px 0 0;color:var(--muted);font-size:13px;line-height:1.45}
+.filters{display:flex;gap:10px;flex-wrap:wrap;padding:16px 18px;border-bottom:1px solid var(--line)}
+.filters input,.filters select{background:#fff;border:1px solid #dce2ea;border-radius:11px;padding:10px 12px;outline:none}
+.filters input{min-width:280px;flex:1}
+.view{display:none}.view.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(180px,1fr));gap:14px}
+.vehicle-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:var(--shadow);cursor:pointer}.vehicle-card:hover{transform:translateY(-1px)}
+.vehicle-card h3{font-size:15px;margin:8px 0 8px}.vehicle-card p{font-size:13px;color:var(--muted);margin:5px 0}
+.modal{position:fixed;inset:0;background:rgba(13,22,40,.55);display:none;align-items:center;justify-content:center;padding:20px;z-index:30}
+.modal.open{display:flex}.dialog{width:min(760px,96vw);max-height:90vh;overflow:auto;background:#fff;border-radius:20px;box-shadow:0 24px 80px rgba(0,0,0,.2)}
+.dialog-head{padding:20px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.dialog-head h2{margin:0;font-size:20px}
+.close{border:0;background:#eef1f5;border-radius:10px;width:36px;height:36px;cursor:pointer}
+.dialog-body{padding:22px}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.detail{border:1px solid var(--line);border-radius:12px;padding:12px}.detail small{display:block;color:var(--muted);font-size:11px;margin-bottom:5px;text-transform:uppercase}
+.history{margin-top:18px;border-top:1px solid var(--line);padding-top:16px}.history-item{padding:12px 0;border-bottom:1px solid var(--line);font-size:14px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}.field label{font-size:12px;color:var(--muted);font-weight:700}.field input,.field select,.field textarea{border:1px solid #dce2ea;border-radius:10px;padding:10px}.field textarea{min-height:90px;resize:vertical}
+.actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}.secondary{border:1px solid #dce2ea;background:#fff;border-radius:11px;padding:10px 14px;font-weight:700;cursor:pointer}
+.empty{padding:36px;text-align:center;color:var(--muted)}
+@media(max-width:1050px){.app{grid-template-columns:88px 1fr}.brand{font-size:0}.brand:after{content:"ТР";font-size:20px}.nav button{font-size:0}.nav button:before{font-size:19px}.nav button[data-view="dashboard"]:before{content:"⌂"}.nav button[data-view="vehicles"]:before{content:"🚜"}.nav button[data-view="tasks"]:before{content:"✓"}.nav button[data-view="mechanics"]:before{content:"🔧"}.userbox{display:none}.kpis{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}.cards{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:650px){.app{display:block}.sidebar{height:auto;position:static;display:flex;align-items:center;padding:10px;overflow:auto}.brand{display:none}.nav{display:flex}.nav button{width:auto;min-width:56px}.main{padding:18px 12px}.topbar{align-items:flex-start}.kpis{grid-template-columns:1fr 1fr}.cards{grid-template-columns:1fr}.detail-grid,.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}}
+
+.task-link{cursor:pointer}
+.task-link:hover{background:#fafcff}
+.chat-wrap{border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:18px}
+.chat-head{padding:12px 14px;background:#fafbfc;border-bottom:1px solid var(--line);font-weight:800}
+.chat-messages{padding:14px;max-height:320px;overflow:auto;background:#fff}
+.msg{max-width:82%;margin:0 0 12px;padding:10px 12px;border-radius:14px;background:#f0f3f8;font-size:14px;line-height:1.4}
+.msg.me{margin-left:auto;background:#eef3ff}
+.msg small{display:block;color:var(--muted);font-size:11px;margin-top:5px}
+.chat-compose{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line);background:#fafbfc}
+.chat-compose input{flex:1;border:1px solid #dce2ea;border-radius:10px;padding:10px 12px}
+.status-box{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
+.status-box .field.full{grid-column:1/-1}
+.timeline{margin-top:18px}
+.timeline-item{padding:10px 0;border-bottom:1px solid var(--line);font-size:13px}
+.timeline-item small{display:block;color:var(--muted);margin-top:3px}
+.required-note{font-size:12px;color:var(--red);margin-top:6px}
+
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">Техно<span>Ресурс</span></div>
+    <div class="nav">
+      <button class="active" data-view="dashboard">Диспетчерская</button>
+      <button data-view="vehicles">Парк техники</button>
+      <button data-view="tasks">Задачи</button>
+      <button data-view="mechanics">Механики</button>
+    </div>
+    <div class="userbox"><b>Александр</b><br>Руководитель / администратор</div>
+  </aside>
+  <main class="main">
+    <section id="dashboard" class="view active">
+      <div class="topbar"><div><h1>Служба механиков</h1><div class="sub">Онлайн-контроль техники, задач и загрузки механиков</div></div><button class="primary" onclick="openTaskModal()">+ Новая задача</button></div>
+      <div class="kpis">
+        <div class="kpi"><small>Всего техники</small><b id="kpi-total">0</b></div>
+        <div class="kpi"><small>В работе</small><b id="kpi-work">0</b></div>
+        <div class="kpi"><small>В ремонте / неисправна</small><b id="kpi-repair">0</b></div>
+        <div class="kpi"><small>Механиков занято</small><b id="kpi-mech">0</b></div>
+        <div class="kpi"><small>Открытых задач</small><b id="kpi-tasks">0</b></div>
+      </div>
+      <div class="grid2">
+        <div class="panel"><div class="panel-head"><h2>Текущие работы</h2><span class="sub">обновляется при смене статуса</span></div><div class="panel-body table-wrap"><table><thead><tr><th>№</th><th>Техника</th><th>Работа</th><th>Механик</th><th>Статус</th><th>Срок</th></tr></thead><tbody id="dashTasks"></tbody></table></div></div>
+        <div class="panel"><div class="panel-head"><h2>Загрузка механиков</h2></div><div id="dashMechanics"></div></div>
+      </div>
+    </section>
+
+    <section id="vehicles" class="view">
+      <div class="topbar"><div><h1>Парк техники</h1><div class="sub">Данные загружены из файла «Техника.xlsx»</div></div></div>
+      <div class="panel">
+        <div class="filters">
+          <input id="vehicleSearch" placeholder="Поиск по типу, модели, госномеру, ПТС..." oninput="renderVehicles()">
+          <select id="vehicleType" onchange="renderVehicles()"><option value="">Все типы</option></select>
+          <select id="vehicleStatus" onchange="renderVehicles()"><option value="">Все статусы</option><option>В работе</option><option>Требует внимания</option><option>Неисправна</option><option>В ремонте</option><option>ТО</option></select>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>№</th><th>Тип</th><th>Марка / модель</th><th>Год</th><th>Госномер</th><th>Объект</th><th>Механик</th><th>Статус</th></tr></thead><tbody id="vehicleRows"></tbody></table></div>
+      </div>
+    </section>
+
+    <section id="tasks" class="view">
+      <div class="topbar"><div><h1>Задачи</h1><div class="sub">Постановка, назначение и контроль выполнения</div></div><button class="primary" onclick="openTaskModal()">+ Новая задача</button></div>
+      <div class="panel"><div class="table-wrap"><table><thead><tr><th>№</th><th>Приоритет</th><th>Техника</th><th>Задача</th><th>Исполнитель</th><th>Объект</th><th>Статус</th><th>Срок</th></tr></thead><tbody id="taskRows"></tbody></table></div></div>
+    </section>
+
+    <section id="mechanics" class="view">
+      <div class="topbar"><div><h1>Механики</h1><div class="sub">Кто чем занят прямо сейчас</div></div></div>
+      <div class="cards" id="mechanicCards"></div>
+    </section>
+  </main>
+</div>
+
+<div class="modal" id="vehicleModal"><div class="dialog"><div class="dialog-head"><h2 id="vehicleModalTitle"></h2><button class="close" onclick="closeModal('vehicleModal')">×</button></div><div class="dialog-body" id="vehicleModalBody"></div></div></div>
+
+<div class="modal" id="taskModal"><div class="dialog"><div class="dialog-head"><h2>Новая задача</h2><button class="close" onclick="closeModal('taskModal')">×</button></div><div class="dialog-body">
+  <div class="form-grid">
+    <div class="field full"><label>Техника</label><select id="newVehicle"></select></div>
+    <div class="field full"><label>Что нужно сделать</label><textarea id="newTitle" placeholder="Например: течь гидравлики, провести диагностику и устранить неисправность"></textarea></div>
+    <div class="field"><label>Исполнитель</label><select id="newMechanic"></select></div>
+    <div class="field"><label>Приоритет</label><select id="newPriority"><option>Средний</option><option>Высокий</option><option>Критический</option><option>Плановый</option></select></div>
+    <div class="field"><label>Объект / адрес</label><input id="newPlace" placeholder="Усть-Луга"></div>
+    <div class="field"><label>Срок</label><input id="newDeadline" placeholder="Сегодня, 18:00"></div>
+  </div>
+  <div class="actions"><button class="secondary" onclick="closeModal('taskModal')">Отмена</button><button class="primary" onclick="createTask()">Создать задачу</button></div>
+</div></div></div>
+
+<script>
+const vehicles = [{"id": 1, "type": "Автобус", "model": "ПАЗ 32053-07", "year": 2010, "pts": "78 РН 676078", "plate": "С 020 РХ 198", "sts": "9962 № 139875", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 2, "type": "Автобус", "model": "ПАЗ 32053-04", "year": 2023, "pts": "164301058008307", "plate": "C 281 МТ 198", "sts": "9960 № 162595", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 3, "type": "Автокран", "model": "ИВАНОВЕЦ КС-45717-2Р", "year": 2021, "pts": "164301021679696", "plate": "М 219 АО 198", "sts": "9933 № 886748", "status": "В ремонте", "object": "Усть-Луга", "mechanic": "Иванов Алексей", "hours": "4 850"}, {"id": 4, "type": "Автокран", "model": "ZOOMLION ZTC300V", "year": 2024, "pts": "164302082314678", "plate": "С 206 ОВ 198", "sts": "9963 № 572953", "status": "Требует внимания", "object": "Пулково", "mechanic": "Петров Сергей", "hours": "2 360"}, {"id": 5, "type": "Бульдозер", "model": "SHANTUI  SD16", "year": 2020, "pts": "RU TK 245684", "plate": "1817 СА 78", "sts": "СМ 115723", "status": "В работе", "object": "ШМСД", "mechanic": "Сидоров Максим", "hours": "5 120"}, {"id": 6, "type": "Бульдозер", "model": "SHANTUI  SD16", "year": 2020, "pts": "RU TK 245745", "plate": "2765 СА 78", "sts": "CM 116869", "status": "ТО", "object": "База", "mechanic": "Кузнецов Илья", "hours": "3 740"}, {"id": 7, "type": "Бульдозер", "model": "SHANTUI SD16", "year": 2022, "pts": "364302000283298", "plate": "3068 СВ 78", "sts": "CM 849861", "status": "Неисправна", "object": "Мурино", "mechanic": "Иванов Алексей", "hours": "4 210"}, {"id": 8, "type": "Бульдозер", "model": "SHANTUI SD17B3 XL", "year": 2022, "pts": "RU TK 422844", "plate": "3066 СВ 78", "sts": "CM 849859", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 9, "type": "Бульдозер", "model": "SHEHWA TY165-3", "year": 2017, "pts": "RU CB 728716", "plate": "4433 СА 78", "sts": "CM 118910", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 10, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2018, "pts": "74 ОХ 156867", "plate": "О 393 ОМ 98", "sts": "9928 № 340963", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 11, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2018, "pts": "74 ОХ 156844", "plate": "О 896 МО 29", "sts": "9928 № 340964", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 12, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2020, "pts": "164301013362211", "plate": "К 147 НТ 198", "sts": "9931 № 927602", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 13, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2020, "pts": "164301013361815", "plate": "К 022 НТ 198", "sts": "9931 № 627601", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 14, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2020, "pts": "164301016919193", "plate": "К 228 АХ 198", "sts": "9932 № 972754", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 15, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2020, "pts": "164301017433982", "plate": "К 234 АХ 198", "sts": "9932 № 972757", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 16, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2021, "pts": "164301025056872", "plate": "К 320 ТН 198", "sts": "9933 № 693533", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 17, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2021, "pts": "164301028842654", "plate": "К 027 УВ 198", "sts": "9933 № 791489", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 18, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2021, "pts": "164301025202094", "plate": "К 489 ОХ 198", "sts": "9933 № 693532", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 19, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2021, "pts": "164301028842599", "plate": "К 651 УЕ 198", "sts": "9933 № 762915", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 20, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2021, "pts": "164301028843633", "plate": "К 654 УЕ 198", "sts": "9933 № 762913", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 21, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2021, "pts": "164301028849760", "plate": "К 696 УЕ 198", "sts": "9937 № 953060", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 22, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2021, "pts": "164301028843457", "plate": "К 717 УЕ 198", "sts": "9933 № 762923", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 23, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2021, "pts": "164301028844711", "plate": "К 791 УЕ 198", "sts": "9933 № 762927", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 24, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2021, "pts": "164301028847703", "plate": "К 794 УЕ 198", "sts": "9933 № 762914", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 25, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2021, "pts": "164301028842610", "plate": "К 797 УЕ 198", "sts": "9933 № 762926", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 26, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2020, "pts": "74 РМ 000831", "plate": "Р 381 ВУ 29", "sts": "9971 № 716855", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 27, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2021, "pts": "164301039836406", "plate": "М 669 КМ 198", "sts": "9938 № 961971", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 28, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2021, "pts": "164301039836098", "plate": "М 435 КМ 198", "sts": "9938 № 961990", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 29, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2021, "pts": "164301039638549", "plate": "М 814 КМ 198", "sts": "9938 № 961988", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 30, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2021, "pts": "164301039544720", "plate": "М 884 КМ 198", "sts": "9938 № 961984", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 31, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2021, "pts": "164301039836208", "plate": "М 892 КМ 198", "sts": "9938 № 961987", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 32, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2021, "pts": "164301040252063", "plate": "М 046 ОА 198", "sts": "9940 № 981620", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 33, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2021, "pts": "164301033277689", "plate": "М 225 АО 198", "sts": "9937 № 990025", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 34, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2021, "pts": "164301025057994", "plate": "О 330 УХ 198", "sts": "9926 № 035486", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 35, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2021, "pts": "164301025057070", "plate": "О 332 ХУ 198", "sts": "9926 № 035485", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 36, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2022, "pts": "164301042772460", "plate": "М 522 ОУ 198", "sts": "9940 № 932445", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 37, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2022, "pts": "164301042862671", "plate": "М 543 ОУ 198", "sts": "9940 № 932443", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 38, "type": "Грузовой - самосвал", "model": "Урал 6370-0121 6Х6", "year": 2022, "pts": "164301041809883", "plate": "М 209 ОА 198", "sts": "9940 № 981625", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 39, "type": "Грузовой - самосвал", "model": "SHACMAN SX32586T385 6Х6", "year": 2022, "pts": "164302053778786", "plate": "Н 644 МА 198", "sts": "9948 № 628165", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 40, "type": "Грузовой - самосвал", "model": "SHACMAN SX32586T385 6Х6", "year": 2022, "pts": "164302053779281", "plate": "Н 789 МА 198", "sts": "9948 № 628161", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 41, "type": "Грузовой - самосвал", "model": "SHACMAN SX32586T385 6Х6", "year": 2022, "pts": "164302053778599", "plate": "Н 903 МА 198", "sts": "9948 № 628234", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 42, "type": "Грузовой - самосвал", "model": "SHACMAN SX32586T385 6Х6", "year": 2022, "pts": "164302053481764", "plate": "Н 944 МА 198", "sts": "9948 № 628233", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 43, "type": "Фронтальный Погрузчик", "model": "SEM 636D", "year": 2019, "pts": "RU TK 307291", "plate": "5343 РВ 78", "sts": "СК 263714", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 44, "type": "Фронтальный Погрузчик", "model": "SHANTUI SL30W", "year": 2019, "pts": "RU TK 299779", "plate": "1808 СА 78", "sts": "СН 336790", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 45, "type": "Фронтальный Погрузчик", "model": "SEM 655D", "year": 2020, "pts": "RU TK 311927", "plate": "8021 РВ 78", "sts": "СН 095240", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 46, "type": "Каток", "model": "AMMANN ARS 122", "year": 2023, "pts": "364302001180250", "plate": "3069 СВ 78", "sts": "СМ 849862 ", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 47, "type": "Каток", "model": "AMMANN ARS 122", "year": 2023, "pts": "364302001179732", "plate": "3067 СВ 78", "sts": "СМ 849860", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 48, "type": "Каток", "model": "AMMANN ARS 122", "year": 2023, "pts": "364302001275212", "plate": "5881 СВ 78", "sts": "СМ 853530", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 49, "type": "Каток", "model": "AMMANN ARS 122", "year": 2023, "pts": "364302001275300", "plate": "5880 СВ 78", "sts": "СМ 853529", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 50, "type": "Подъёмник", "model": "ZOOMLION ZT26J", "year": 2022, "pts": "364302000453589", "plate": "3042 СВ 78", "sts": "СМ 849829", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 51, "type": "Подъёмник", "model": "ZOOMLION ZT26J", "year": 2022, "pts": "364302000453590", "plate": "3043 СВ 78", "sts": "СМ 849830", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 52, "type": "Подъёмник", "model": "ZOOMLION ZT26J", "year": 2023, "pts": "364302002861104", "plate": "7189 СВ 78", "sts": "СН 095491", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 53, "type": "Подъёмник", "model": "ZOOMLION ZT26J", "year": 2023, "pts": "364302002827884", "plate": "7190 СВ 78", "sts": "СН 095492", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 54, "type": "Экскаватор", "model": "Hyundai R220-LC-9S", "year": 2018, "pts": "RU TK 085797", "plate": "0983 РВ 78", "sts": "СЕ 969999", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 55, "type": "Экскаватор", "model": "Hyundai R220-LC-9S", "year": 2018, "pts": "RU TK 286063", "plate": "0984 РВ 78", "sts": "СЕ 970000", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 56, "type": "Экскаватор", "model": "Hyundai R220-LC-9S", "year": 2019, "pts": "RU TK 106293", "plate": "8023 РВ 78 ", "sts": "СК 267754", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 57, "type": "Экскаватор", "model": "Hyundai HX220S", "year": 2020, "pts": "RU TK 248270", "plate": "9682 РВ 78", "sts": "СК 270049", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 58, "type": "Экскаватор", "model": "Hyundai HX220S", "year": 2020, "pts": "RU TK 248197", "plate": "8022 РВ 78", "sts": "СК 267751", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 59, "type": "Экскаватор", "model": "Hyundai  HX220S", "year": 2021, "pts": "RU TK 345214", "plate": "4840 СА 78", "sts": "СМ 119435", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 60, "type": "Экскаватор", "model": "Hyundai HX220S", "year": 2021, "pts": "RU TK 257996", "plate": "2141 СА 78", "sts": "СМ 116128", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 61, "type": "Экскаватор", "model": "Hyundai HX220S", "year": 2021, "pts": "RU TK 257899", "plate": "2142 СА 78", "sts": "СМ 116129", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 62, "type": "Экскаватор", "model": "Hyundai HX220S", "year": 2021, "pts": "RU TK 345204", "plate": "4839 СА 78", "sts": "СМ 119434", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 63, "type": "Экскаватор", "model": "Hyundai HX220S", "year": 2021, "pts": "RU TK 258902", "plate": "2714 СА 78", "sts": "СМ 116806", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 64, "type": "Экскаватор", "model": "Hyundai HX220S", "year": 2021, "pts": "RU TK 258750", "plate": "2713 СА 78", "sts": "СМ 116804", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 65, "type": "Экскаватор", "model": "Hyundai HX220S", "year": 2022, "pts": "364302000231631", "plate": "0992 СВ 78", "sts": "СМ 561084", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 66, "type": "Экскаватор", "model": "Hyundai HX220S", "year": 2022, "pts": "364302000230982", "plate": "0993 СВ 78", "sts": "СМ 561085", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 67, "type": "Экскаватор", "model": "Hyundai HX220S", "year": 2022, "pts": "RU TK 268980", "plate": "9658 СА 78", "sts": "СМ 559362", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 68, "type": "Экскаватор", "model": "Hyundai HX220S", "year": 2022, "pts": "RU TK 268983", "plate": "9659 СА 78", "sts": "СМ 559363", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 69, "type": "Экскаватор", "model": "Hyundai HX220S", "year": 2022, "pts": "364302000232313", "plate": "1821 СВ 78", "sts": "СМ 848235", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 70, "type": "Экскаватор", "model": "Hyundai HX220S", "year": 2022, "pts": "364302000232797", "plate": "1820 СВ 78", "sts": "СМ 848234", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 71, "type": "Экскаватор", "model": "Hyundai HX220S", "year": 2022, "pts": "RU TK 268959", "plate": "8702 СА 78", "sts": "СМ 558298", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 72, "type": "Экскаватор", "model": "Hyundai HX220S", "year": 2022, "pts": "RU TK 268961", "plate": "8204 СА 78", "sts": "СМ 557701", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 73, "type": "Экскаватор", "model": "Hyundai HX300SL", "year": 2022, "pts": "364302000242455", "plate": "1816 СВ 78", "sts": "СМ 848230", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 74, "type": "Экскаватор", "model": "Hyundai HX300SL", "year": 2022, "pts": "364302000253862", "plate": "1817 СВ 78", "sts": "СМ 848231", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 75, "type": "Экскаватор", "model": "Hyundai HX300SL", "year": 2023, "pts": "364302000517136", "plate": "1819 СВ 78", "sts": "СМ 848233", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 76, "type": "Экскаватор", "model": "Hyundai HX300SL", "year": 2023, "pts": "364302000535154", "plate": "1818 СВ 78", "sts": "СМ 848232", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 77, "type": "Экскаватор", "model": "Hyundai R225LVS", "year": 2023, "pts": "364302000985241", "plate": "0019 СЕ 78", "sts": "СН 336356", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 78, "type": "Экскаватор", "model": "Hyundai R225LVS", "year": 2023, "pts": "364302000985110", "plate": "0020 СЕ 78", "sts": "СН 336357", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 79, "type": "Экскаватор-погрузчик", "model": "CASE  570ST", "year": 2023, "pts": "364302001203943", "plate": "4640 СВ 78", "sts": "СМ 851868", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 80, "type": "Экскаватор-погрузчик", "model": "CASE  570ST", "year": 2023, "pts": "364302001123467", "plate": "5852 СВ 78", "sts": "СМ 853491", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 81, "type": "Экскаватор-погрузчик", "model": "CASE  570ST", "year": 2023, "pts": "364302001132729", "plate": "5117 СВ 78", "sts": "СМ 852519", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 82, "type": "Экскаватор-погрузчик", "model": "CASE  570ST", "year": 2023, "pts": "364302002182888", "plate": "5879 СВ 78", "sts": "СМ 853528", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 83, "type": "Экскаватор-погрузчик", "model": "CASE  570ST", "year": 2023, "pts": "364302002366214", "plate": "5531 СВ 78", "sts": "СМ 853066", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 84, "type": "Трал/Грузовой тягач седельный", "model": "MERCEDES-BENZ ACTROS", "year": 2023, "pts": "164302078025767", "plate": "С 961 НН 198", "sts": "9963 № 610773", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 85, "type": "Легковой универсал", "model": "LADA LARGUS RS045L", "year": 2021, "pts": "164301030265207", "plate": "К133УО 198", "sts": "9970 № 234887", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 86, "type": "Легковой универсал", "model": "LADA LARGUS", "year": 2021, "pts": "164301028240151", "plate": "К131ТО 198", "sts": "9973 № 232147", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 87, "type": "Грузовой Фургон", "model": "LADA LARGUS", "year": 2021, "pts": "164301028240162", "plate": "К091ТО 198", "sts": "9970 № 235792", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 88, "type": "Легковой универсал", "model": "LADA 4X4 213100", "year": 2021, "pts": "164301031244361", "plate": "К697УО 198", "sts": "9970 № 248952", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 89, "type": "Легковой комби (хэтчбек)", "model": "LADA GRANTA", "year": 2023, "pts": "164301064937922", "plate": "Н611УТ 198", "sts": "9954 № 709859", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 90, "type": "Легковой комби (хэтчбек)", "model": "LADA GRANTA", "year": 2024, "pts": "164301086451403", "plate": "С675НТ198", "sts": "9965 № 589557", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 91, "type": "Легковой пикап", "model": "Great Wall", "year": 2023, "pts": "164302082531422", "plate": "С417КМ198", "sts": "9976 № 836995", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 92, "type": "Грузовой Фургон", "model": "ГАЗ GAZELLE NEXT", "year": 2022, "pts": "164301047718775", "plate": "Н056МА 198", "sts": "9948 № 662066", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 93, "type": "Грузовой Фургон", "model": "ГАЗ СОБОЛЬ", "year": 2023, "pts": "164301062982166", "plate": "Н038ХА 198", "sts": "9954 № 708846", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 94, "type": "Грузовой Фургон", "model": "ГАЗ СОБОЛЬ", "year": 2022, "pts": "164301045289910", "plate": "М746ТМ 198", "sts": "9942 № 875829", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 95, "type": "Грузовой Фургон", "model": "ГАЗ СОБОЛЬ", "year": 2023, "pts": "164301057543403", "plate": "Н993КР 198", "sts": "9948 № 861703", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 96, "type": "Грузовой Фургон", "model": "SOLLERS Atlant", "year": 2023, "pts": "164301058285551", "plate": "Н833РР 198", "sts": "9954 № 619661", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 97, "type": "Грузовой Фургон", "model": "Ford Transit FCD350L", "year": 2020, "pts": "164301017311970", "plate": "К914ВХ 198", "sts": "9971 № 347470", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 98, "type": "специализированный (1место\nводителя+8пассажиры)", "model": "УАЗ 220695-04", "year": 2023, "pts": "164301072569282", "plate": "С191СО 198", "sts": "9961 № 033357", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 99, "type": "специализированный (1место\nводителя+8пассажиры)", "model": "УАЗ 220695-04", "year": 2023, "pts": "164301065372213", "plate": "Н728ХА 198", "sts": "9957 № 922988", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 100, "type": "Грузовой бортовой", "model": "УАЗ UAZ Profi", "year": 2022, "pts": "164301051340965", "plate": "Н761АН 198", "sts": "9946 № 094664", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 101, "type": "Грузовой бортовой", "model": "УАЗ 236324 UAZ Profi", "year": 2018, "pts": "73 ОХ 199329", "plate": "К914ВМ 198", "sts": "9933 № 606878", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 102, "type": "Грузовой бортовой", "model": "УАЗ UAZ Profi", "year": 2024, "pts": "164301088029771", "plate": "Т420НУ 198", "sts": "9970 № 248953", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 103, "type": "специализированный (1место\nводителя+8пассажиры)", "model": "УАЗ 220695-04", "year": 2024, "pts": "164301090799065", "plate": "Т200НУ 198", "sts": "9970 № 248668", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 104, "type": "специализированный (1место\nводителя+8пассажиры)", "model": "УАЗ 220695-04", "year": 2024, "pts": "164301085873199", "plate": "Т291РО198", "sts": "9971 № 736464", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}, {"id": 105, "type": "", "model": "", "year": "", "pts": "", "plate": "", "sts": "", "status": "В работе", "object": "Не назначен", "mechanic": "Не назначен", "hours": ""}];
+const mechanics = [{"name": "Иванов Алексей", "state": "В работе", "task": "Замена гидрошланга", "vehicle": "ИВАНОВЕЦ КС-45717-2Р", "place": "Усть-Луга", "since": "2 ч 14 мин"}, {"name": "Петров Сергей", "state": "В пути", "task": "Диагностика гидравлики", "vehicle": "ZOOMLION ZTC300V", "place": "Пулково", "since": "47 мин"}, {"name": "Сидоров Максим", "state": "В работе", "task": "Осмотр ходовой", "vehicle": "SHANTUI SD16", "place": "ШМСД", "since": "1 ч 08 мин"}, {"name": "Кузнецов Илья", "state": "ТО", "task": "ТО-500", "vehicle": "SHANTUI SD16", "place": "База", "since": "3 ч 02 мин"}, {"name": "Смирнов Павел", "state": "Свободен", "task": "—", "vehicle": "—", "place": "База", "since": "—"}];
+let tasks = [{"id": 124, "priority": "Критический", "status": "В работе", "vehicle_id": 3, "title": "Течь гидравлического масла", "mechanic": "Иванов Алексей", "place": "Усть-Луга", "deadline": "Сегодня, 16:00", "created": "05.09.2026 09:35"}, {"id": 125, "priority": "Высокий", "status": "В пути", "vehicle_id": 4, "title": "Падение давления в гидросистеме", "mechanic": "Петров Сергей", "place": "Пулково", "deadline": "Сегодня, 14:30", "created": "05.09.2026 10:10"}, {"id": 126, "priority": "Средний", "status": "Диагностика", "vehicle_id": 5, "title": "Проверить стук в ходовой", "mechanic": "Сидоров Максим", "place": "ШМСД", "deadline": "Сегодня, 18:00", "created": "05.09.2026 08:20"}, {"id": 127, "priority": "Плановый", "status": "ТО", "vehicle_id": 6, "title": "ТО-500: масла и фильтры", "mechanic": "Кузнецов Илья", "place": "База", "deadline": "06.09, 12:00", "created": "04.09.2026 17:40"}, {"id": 128, "priority": "Критический", "status": "Ожидание запчастей", "vehicle_id": 7, "title": "Не запускается двигатель", "mechanic": "Иванов Алексей", "place": "Мурино", "deadline": "Просрочено 1 ч 25 мин", "created": "05.09.2026 07:50"}];
+
+function vById(id){return vehicles.find(v=>v.id===id)||{}}
+function badgeStatus(s){
+  let c='blue'; if(['Неисправна','Просрочено'].some(x=>s.includes(x))) c='red'; else if(['Требует внимания','Ожидание запчастей','Диагностика','В пути'].includes(s)) c='orange'; else if(['В работе','Выполнена','ТО'].includes(s)) c='green';
+  return `<span class="badge ${c}">${s}</span>`;
+}
+function priorityBadge(p){let c=p==='Критический'?'red':p==='Высокий'?'orange':p==='Плановый'?'blue':'green';return `<span class="badge ${c}">${p}</span>`}
+function renderDashboard(){
+ document.getElementById('kpi-total').textContent=vehicles.length;
+ document.getElementById('kpi-work').textContent=vehicles.filter(v=>v.status==='В работе').length;
+ document.getElementById('kpi-repair').textContent=vehicles.filter(v=>['В ремонте','Неисправна'].includes(v.status)).length;
+ document.getElementById('kpi-mech').textContent=mechanics.filter(m=>m.state!=='Свободен').length+'/'+mechanics.length;
+ document.getElementById('kpi-tasks').textContent=tasks.length;
+ document.getElementById('dashTasks').innerHTML=tasks.slice(0,6).map(t=>{let v=vById(t.vehicle_id);return `<tr class="task-link" onclick="openTaskDetail(${t.id})"><td>#${t.id}</td><td>${v.model||'—'}<br><small>${v.plate||''}</small></td><td>${t.title}</td><td>${t.mechanic}</td><td>${badgeStatus(t.status)}</td><td>${t.deadline}</td></tr>`}).join('');
+ document.getElementById('dashMechanics').innerHTML=mechanics.map(m=>`<div class="mechanic"><div class="mrow"><b>${m.name}</b>${badgeStatus(m.state)}</div><p>${m.task}<br>${m.vehicle} · ${m.place}<br>${m.since}</p></div>`).join('');
+}
+function renderVehicleTypeOptions(){
+ const types=[...new Set(vehicles.map(v=>v.type).filter(Boolean))].sort();
+ document.getElementById('vehicleType').innerHTML='<option value="">Все типы</option>'+types.map(t=>`<option>${t}</option>`).join('');
+}
+function renderVehicles(){
+ const q=(document.getElementById('vehicleSearch').value||'').toLowerCase();
+ const type=document.getElementById('vehicleType').value;
+ const status=document.getElementById('vehicleStatus').value;
+ const list=vehicles.filter(v=>{
+   const hay=[v.type,v.model,v.plate,v.pts,v.sts,v.object,v.mechanic].join(' ').toLowerCase();
+   return (!q||hay.includes(q))&&(!type||v.type===type)&&(!status||v.status===status);
+ });
+ document.getElementById('vehicleRows').innerHTML=list.map(v=>`<tr class="clickable" onclick="openVehicle(${v.id})"><td>${v.id}</td><td>${v.type}</td><td><b>${v.model}</b></td><td>${v.year}</td><td>${v.plate}</td><td>${v.object}</td><td>${v.mechanic}</td><td>${badgeStatus(v.status)}</td></tr>`).join('');
+}
+function renderTasks(){
+ document.getElementById('taskRows').innerHTML=tasks.map(t=>{let v=vById(t.vehicle_id);return `<tr class="task-link" onclick="openTaskDetail(${t.id})"><td>#${t.id}</td><td>${priorityBadge(t.priority)}</td><td>${v.model||'—'}<br><small>${v.plate||''}</small></td><td><b>${t.title}</b></td><td>${t.mechanic}</td><td>${t.place}</td><td>${badgeStatus(t.status)}</td><td>${t.deadline}</td></tr>`}).join('');
+}
+function renderMechanics(){
+ document.getElementById('mechanicCards').innerHTML=mechanics.map(m=>`<div class="vehicle-card"><div>${badgeStatus(m.state)}</div><h3>${m.name}</h3><p><b>${m.task}</b></p><p>${m.vehicle}</p><p>${m.place} · ${m.since}</p></div>`).join('');
+}
+function openVehicle(id){
+ let v=vById(id);
+ let related=tasks.filter(t=>t.vehicle_id===id);
+ document.getElementById('vehicleModalTitle').textContent=v.model;
+ document.getElementById('vehicleModalBody').innerHTML=`
+ <div style="margin-bottom:16px">${badgeStatus(v.status)}</div>
+ <div class="detail-grid">
+  <div class="detail"><small>Тип</small><b>${v.type}</b></div><div class="detail"><small>Госномер</small><b>${v.plate||'—'}</b></div>
+  <div class="detail"><small>Год</small><b>${v.year||'—'}</b></div><div class="detail"><small>Объект</small><b>${v.object}</b></div>
+  <div class="detail"><small>ПТС</small><b>${v.pts||'—'}</b></div><div class="detail"><small>СТС</small><b>${v.sts||'—'}</b></div>
+  <div class="detail"><small>Ответственный механик</small><b>${v.mechanic}</b></div><div class="detail"><small>Моточасы / пробег</small><b>${v.hours||'не заполнено'}</b></div>
+ </div>
+ <div class="history"><b>Открытые задачи</b>${related.length?related.map(t=>`<div class="history-item">#${t.id} · ${priorityBadge(t.priority)} ${t.title}<br><span class="sub">${t.mechanic} · ${t.deadline}</span></div>`).join(''):'<div class="empty">Открытых задач нет</div>'}</div>`;
+ document.getElementById('vehicleModal').classList.add('open');
+}
+function openTaskModal(){
+ document.getElementById('newVehicle').innerHTML=vehicles.map(v=>`<option value="${v.id}">${v.id}. ${v.type} — ${v.model} — ${v.plate}</option>`).join('');
+ document.getElementById('newMechanic').innerHTML=mechanics.map(m=>`<option>${m.name}</option>`).join('');
+ document.getElementById('taskModal').classList.add('open');
+}
+function createTask(){
+ const title=document.getElementById('newTitle').value.trim();
+ if(!title){alert('Укажите задачу');return}
+ const id=Math.max(...tasks.map(t=>t.id))+1;
+ tasks.unshift({id,priority:document.getElementById('newPriority').value,status:'Новая',vehicle_id:Number(document.getElementById('newVehicle').value),title,mechanic:document.getElementById('newMechanic').value,place:document.getElementById('newPlace').value||'Не указан',deadline:document.getElementById('newDeadline').value||'Не указан',created:new Date().toLocaleString('ru-RU'),comments:[],chat:[{author:'Система',text:'Задача создана и назначена исполнителю.',time:new Date().toLocaleString('ru-RU')}],history:[{author:'Система',action:'Создана задача',time:new Date().toLocaleString('ru-RU')} ]});
+ closeModal('taskModal'); document.getElementById('newTitle').value=''; renderAll(); switchView('tasks');
+}
+
+function getTask(id){return tasks.find(t=>t.id===id)}
+function openTaskDetail(id){
+ currentTaskId=id;
+ const t=getTask(id), v=vById(t.vehicle_id);
+ document.getElementById('taskDetailTitle').textContent=`Задача #${t.id}`;
+ document.getElementById('taskDetailBody').innerHTML=`
+   <div class="detail-grid">
+     <div class="detail"><small>Техника</small><b>${v.model||'—'} · ${v.plate||''}</b></div>
+     <div class="detail"><small>Исполнитель</small><b>${t.mechanic}</b></div>
+     <div class="detail"><small>Объект</small><b>${t.place}</b></div>
+     <div class="detail"><small>Срок</small><b>${t.deadline}</b></div>
+     <div class="detail"><small>Приоритет</small><b>${priorityBadge(t.priority)}</b></div>
+     <div class="detail"><small>Текущий статус</small><b>${badgeStatus(t.status)}</b></div>
+   </div>
+   <div class="history"><b>Описание задачи</b><div class="history-item">${t.title}</div></div>
+
+   <div class="status-box">
+      <div class="field">
+        <label>Новый статус *</label>
+        <select id="detailStatus">
+          <option value="">Выберите статус</option>
+          ${['Принята','В пути','Диагностика','В работе','Ожидание запчастей','Выполнена'].map(s=>`<option ${t.status===s?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field full">
+        <label>Комментарий механика *</label>
+        <textarea id="detailComment" placeholder="Что сделано, что обнаружено, что требуется дальше"></textarea>
+        <div class="required-note">При изменении статуса комментарий обязателен.</div>
+      </div>
+      <div class="field full">
+        <button class="primary" onclick="saveTaskUpdate()">Сохранить статус и комментарий</button>
+      </div>
+   </div>
+
+   <div class="chat-wrap">
+      <div class="chat-head">Чат по задаче</div>
+      <div class="chat-messages" id="taskChatMessages">
+        ${renderTaskChat(t)}
+      </div>
+      <div class="chat-compose">
+        <input id="chatInput" placeholder="Написать сообщение по задаче..." onkeydown="if(event.key==='Enter')sendChatMessage()">
+        <button class="primary" onclick="sendChatMessage()">Отправить</button>
+      </div>
+   </div>
+
+   <div class="timeline">
+     <b>История изменений</b>
+     <div id="taskTimeline">
+       ${renderTaskHistory(t)}
+     </div>
+   </div>
+ `;
+ document.getElementById('taskDetailModal').classList.add('open');
+}
+function renderTaskChat(t){
+ if(!t.chat || !t.chat.length) return '<div class="empty">Сообщений пока нет</div>';
+ return t.chat.map(m=>`<div class="msg ${m.author===t.mechanic?'me':''}"><b>${m.author}</b><br>${m.text}<small>${m.time}</small></div>`).join('');
+}
+function renderTaskHistory(t){
+ const all = [
+   ...(t.history||[]).map(h=>({type:'history',...h})),
+   ...(t.comments||[]).map(c=>({type:'comment',author:c.author,action:`Статус: ${c.status}. ${c.text}`,time:c.time}))
+ ];
+ return all.slice().reverse().map(h=>`<div class="timeline-item"><b>${h.author}</b> — ${h.action}<small>${h.time}</small></div>`).join('');
+}
+function saveTaskUpdate(){
+ const t=getTask(currentTaskId);
+ const status=document.getElementById('detailStatus').value;
+ const comment=document.getElementById('detailComment').value.trim();
+ if(!status){alert('Выберите статус задачи');return}
+ if(!comment){alert('Комментарий механика обязателен');return}
+ const now=new Date().toLocaleString('ru-RU');
+ t.status=status;
+ t.comments=t.comments||[];
+ t.comments.push({author:t.mechanic,status,text:comment,time:now});
+ t.chat=t.chat||[];
+ t.chat.push({author:t.mechanic,text:`Статус: ${status}. ${comment}`,time:now});
+ t.history=t.history||[];
+ t.history.push({author:t.mechanic,action:`Изменил статус на «${status}»`,time:now});
+ document.getElementById('detailComment').value='';
+ document.getElementById('taskChatMessages').innerHTML=renderTaskChat(t);
+ document.getElementById('taskTimeline').innerHTML=renderTaskHistory(t);
+ renderAll();
+}
+function sendChatMessage(){
+ const t=getTask(currentTaskId);
+ const input=document.getElementById('chatInput');
+ const text=input.value.trim();
+ if(!text)return;
+ const now=new Date().toLocaleString('ru-RU');
+ t.chat=t.chat||[];
+ t.chat.push({author:t.mechanic,text,time:now});
+ input.value='';
+ document.getElementById('taskChatMessages').innerHTML=renderTaskChat(t);
+ const box=document.getElementById('taskChatMessages');
+ box.scrollTop=box.scrollHeight;
+}
+
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+function switchView(id){
+ document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); document.getElementById(id).classList.add('active');
+ document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));
+}
+document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>switchView(b.dataset.view));
+document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')}));
+function renderAll(){renderDashboard();renderVehicles();renderTasks();renderMechanics()}
+renderVehicleTypeOptions(); renderAll();
+</script>
+
+<div class="modal" id="taskDetailModal">
+  <div class="dialog">
+    <div class="dialog-head">
+      <h2 id="taskDetailTitle">Задача</h2>
+      <button class="close" onclick="closeModal('taskDetailModal')">×</button>
+    </div>
+    <div class="dialog-body" id="taskDetailBody"></div>
+  </div>
+</div>
+
+</body>
+</html>
