@@ -17,12 +17,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
     $role     = $_POST['role'] ?? 'mechanic';
     $phone    = trim($_POST['phone'] ?? '');
     $objectIds = array_map('intval', (array) ($_POST['object_ids'] ?? []));
+    $maxUserId = trim($_POST['max_user_id'] ?? '');
 
     // Слесарь заводится карточкой без доступа на сайт
     $canLogin = $role !== 'fitter';
 
     if ($fullName === '') $errors[] = 'Укажите ФИО.';
     if (!in_array($role, ROLE_CHOICES, true)) $errors[] = 'Некорректная роль.';
+    if ($maxUserId !== '' && !preg_match('/^\d+$/', $maxUserId)) $errors[] = 'MAX ID — только цифры (id из лога бота).';
 
     if ($canLogin) {
         if ($username === '') $errors[] = 'Укажите логин.';
@@ -37,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
         $pdo->beginTransaction();
         try {
             $stmt = $pdo->prepare(
-                'INSERT INTO users (full_name, username, password_hash, role, can_login, phone) VALUES (?,?,?,?,?,?)'
+                'INSERT INTO users (full_name, username, password_hash, role, can_login, phone, max_user_id) VALUES (?,?,?,?,?,?,?)'
             );
             $stmt->execute([
                 $fullName,
@@ -46,6 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
                 $role,
                 $canLogin ? 1 : 0,
                 $phone ?: null,
+                $maxUserId !== '' ? $maxUserId : null,
             ]);
             $newId = (int) $pdo->lastInsertId();
 
@@ -58,7 +61,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
             redirect('users.php');
         } catch (PDOException $ex) {
             $pdo->rollBack();
-            $errors[] = $ex->getCode() === '23000' ? 'Такой логин уже занят.' : ('Ошибка: ' . $ex->getMessage());
+            $errors[] = $ex->getCode() === '23000'
+                ? 'Такой логин или MAX ID уже заняты.'
+                : ('Ошибка: ' . $ex->getMessage());
         }
     }
 }
@@ -173,6 +178,9 @@ require __DIR__ . '/includes/header.php';
     <div class="form-row">
         <label>Телефон
             <input type="text" name="phone" value="<?= e($_POST['phone'] ?? '') ?>">
+        </label>
+        <label>MAX ID <span class="hint">(id из лога бота, если уже отчитывался)</span>
+            <input type="text" name="max_user_id" pattern="\d*" value="<?= e($_POST['max_user_id'] ?? '') ?>">
         </label>
     </div>
 

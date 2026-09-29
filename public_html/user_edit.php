@@ -25,10 +25,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $role = $_POST['role'] ?? $target['role'];
     $newPassword = (string) ($_POST['new_password'] ?? '');
     $selectedObjects = array_map('intval', (array) ($_POST['object_ids'] ?? []));
+    $maxUserId = trim($_POST['max_user_id'] ?? '');
 
     if ($fullName === '') $errors[] = 'Укажите ФИО.';
     if (!in_array($role, $roleChoices, true)) $errors[] = 'Некорректная роль.';
     if ($newPassword !== '' && strlen($newPassword) < 6) $errors[] = 'Новый пароль должен быть не короче 6 символов.';
+    if ($maxUserId !== '' && !preg_match('/^\d+$/', $maxUserId)) $errors[] = 'MAX ID — только цифры (id из лога бота).';
 
     if ((int) $target['id'] === (int) $admin['id'] && $role !== 'admin') {
         $errors[] = 'Нельзя понизить роль собственной учётной записи.';
@@ -64,18 +66,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 set_user_objects($id, []);
             }
 
+            $maxIdStmt = $pdo->prepare('UPDATE users SET max_user_id = ? WHERE id = ?');
+            $maxIdStmt->execute([$maxUserId !== '' ? $maxUserId : null, $id]);
+
             $pdo->commit();
             flash('success', 'Данные сотрудника обновлены.');
             redirect('users.php' . ($role === 'fitter' ? '?tab=fitters' : ''));
         } catch (PDOException $ex) {
             $pdo->rollBack();
-            $errors[] = 'Ошибка сохранения: ' . $ex->getMessage();
+            $errors[] = $ex->getCode() === '23000'
+                ? 'Этот MAX ID уже привязан к другому сотруднику.'
+                : ('Ошибка сохранения: ' . $ex->getMessage());
         }
     }
 
     $target['full_name'] = $fullName;
     $target['phone'] = $phone;
     $target['role'] = $role;
+    $target['max_user_id'] = $maxUserId;
 }
 
 $isSelf = (int) $target['id'] === (int) $admin['id'];
@@ -121,6 +129,13 @@ require __DIR__ . '/includes/header.php';
     <div id="passwordField">
         <label>Новый пароль <span class="hint">(оставьте пустым, если менять не нужно)</span>
             <input type="text" name="new_password" minlength="6" placeholder="не короче 6 символов">
+        </label>
+    </div>
+
+    <div class="form-row">
+        <label>MAX ID <span class="hint">(id отправителя из лога бота — привязка отчётов в чате MAX)</span>
+            <input type="text" name="max_user_id" pattern="\d*" placeholder="только цифры, оставьте пустым, если не привязан"
+                value="<?= e((string) ($target['max_user_id'] ?? '')) ?>">
         </label>
     </div>
 

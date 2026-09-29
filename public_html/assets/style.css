@@ -84,6 +84,12 @@ h3 { font-size: 1rem; margin: 0 0 10px; }
 .btn-primary:hover { background: var(--primary-dark); }
 .btn-block { width: 100%; }
 .btn-link { background: none; border: none; color: var(--primary); cursor: pointer; padding: 6px 0; font-size: inherit; font-weight: 600; min-height: 32px; touch-action: manipulation; }
+.btn-success { background: var(--success); border-color: var(--success); color: #fff; }
+.btn-success:hover { background: #0e5c3a; }
+.btn-warn { background: var(--warn); border-color: var(--warn); color: #fff; }
+.btn-warn:hover { background: #7a4600; }
+.btn-danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+.btn-danger:hover { background: #b02323; }
 .inline-form { display: inline; }
 .inline-form-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 

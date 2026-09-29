@@ -12,3 +12,4 @@ public_html/uploads/tasks/*
 
 # Исторические SQL в archive/ — часть истории проекта
 !archive/db-2026-09-05/*.sql
+!archive/db-2026-09-29/*.sql

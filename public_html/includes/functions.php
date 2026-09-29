@@ -357,6 +357,29 @@ function append_daily_report_note(int $userId, string $note): void
     }
 }
 
+/** Человекочитаемый статус проверки ежедневного отчёта */
+function daily_report_review_label(string $status): string
+{
+    return match ($status) {
+        'pending' => 'На проверке',
+        'approved' => 'Принято',
+        'rejected' => 'Не принято',
+        'partial' => 'Частично',
+        default => $status,
+    };
+}
+
+/** CSS-класс бейджа под статус проверки отчёта */
+function daily_report_review_class(string $status): string
+{
+    return match ($status) {
+        'approved' => 'badge-verified',
+        'rejected' => 'badge-rejected',
+        'partial' => 'badge-progress',
+        default => 'badge-new',
+    };
+}
+
 /** Человекочитаемое название роли */
 function role_label(string $role): string
 {

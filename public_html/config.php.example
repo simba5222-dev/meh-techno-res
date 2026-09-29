@@ -27,6 +27,17 @@ define('UPLOAD_URL', 'uploads/tasks');
 // --- Максимальный размер загружаемого фото, байт (10 МБ) ---
 define('MAX_UPLOAD_SIZE', 10 * 1024 * 1024);
 
+// --- Приём отчётов от бота MAX: сравнивается с заголовком X-Bot-Token
+//     в bot_api.php (не Authorization — его на shared-хостинге часто режет
+//     Apache/mod_php ещё до PHP). Сгенерировать самостоятельно
+//     (например, bin2hex(random_bytes(32))) и вписать то же значение в .env бота ---
+define('BOT_API_TOKEN', '');
+
+// --- Отправка ответа в MAX при проверке отчёта на сайте (daily_report_review.php) ---
+define('MAX_BOT_TOKEN', '');                 // тот же токен, что в /home/claude/max/.env
+define('MAX_API_BASE', 'https://platform-api2.max.ru');
+define('MAX_CA_BUNDLE', __DIR__ . '/includes/certs/russian_trusted_root_ca.pem');
+
 // --- Часовой пояс ---
 date_default_timezone_set('Europe/Moscow');
 
