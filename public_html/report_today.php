@@ -61,17 +61,28 @@ $historyStmt->execute([$user['id']]);
 $history = $historyStmt->fetchAll();
 
 $canReview = in_array($user['role'], ['admin', 'mechanic'], true);
-$pendingReviews = [];
+$pendingMaxReports = [];
+$pendingSiteReports = [];
 if ($canReview) {
-    $pendingStmt = $pdo->prepare(
+    $pendingMaxStmt = $pdo->prepare(
+        "SELECT mr.*, u.full_name, u.role AS author_role
+           FROM max_reports mr
+           JOIN users u ON u.id = mr.user_id
+          WHERE mr.review_status = 'pending' AND mr.user_id != ?
+          ORDER BY mr.created_at ASC"
+    );
+    $pendingMaxStmt->execute([$user['id']]);
+    $pendingMaxReports = $pendingMaxStmt->fetchAll();
+
+    $pendingSiteStmt = $pdo->prepare(
         "SELECT dr.*, u.full_name, u.role AS author_role
            FROM daily_reports dr
            JOIN users u ON u.id = dr.user_id
-          WHERE dr.review_status = 'pending' AND dr.user_id != ?
+          WHERE dr.review_status = 'pending' AND dr.user_id != ? AND dr.summary IS NOT NULL AND dr.summary != ''
           ORDER BY dr.report_date DESC, dr.updated_at DESC"
     );
-    $pendingStmt->execute([$user['id']]);
-    $pendingReviews = $pendingStmt->fetchAll();
+    $pendingSiteStmt->execute([$user['id']]);
+    $pendingSiteReports = $pendingSiteStmt->fetchAll();
 }
 
 require __DIR__ . '/includes/header.php';
@@ -85,19 +96,52 @@ require __DIR__ . '/includes/header.php';
 <?php endforeach; ?>
 
 <?php if ($canReview): ?>
-<h2>Отчёты на проверке<?= $pendingReviews ? ' <span class="count-pill">' . count($pendingReviews) . '</span>' : '' ?></h2>
-<?php if (!$pendingReviews): ?>
-    <p class="empty-cell">Непроверенных отчётов нет.</p>
+<h2>Сообщения из чата MAX на проверке<?= $pendingMaxReports ? ' <span class="count-pill">' . count($pendingMaxReports) . '</span>' : '' ?></h2>
+<?php if (!$pendingMaxReports): ?>
+    <p class="empty-cell">Непроверенных сообщений нет.</p>
 <?php else: ?>
     <div class="table-wrap">
-    <?php foreach ($pendingReviews as $r): ?>
+    <?php foreach ($pendingMaxReports as $r): $files = max_report_files((int) $r['id']); ?>
         <div class="form-card">
             <div class="mechanic-card-head">
                 <strong><?= e($r['full_name']) ?></strong>
-                <span class="hint"><?= e(role_label($r['author_role'])) ?> · <?= fmt_date($r['report_date']) ?>
-                    <?= $r['max_chat_id'] ? ' · из чата MAX' : '' ?></span>
+                <span class="hint"><?= e(role_label($r['author_role'])) ?> · <?= fmt_datetime($r['created_at']) ?></span>
             </div>
-            <p class="report-summary-cell"><?= $r['summary'] ? nl2br(e($r['summary'])) : '—' ?></p>
+            <p class="report-summary-cell"><?= nl2br(e($r['text'])) ?></p>
+            <?php if ($files): ?>
+                <div class="report-attachments">
+                    <?php foreach ($files as $f): ?>
+                        <?php if ($f['file_type'] === 'image'): ?>
+                            <a href="<?= e($f['file_path']) ?>" target="_blank"><img src="<?= e($f['file_path']) ?>" alt="" class="report-thumb"></a>
+                        <?php else: ?>
+                            <a href="<?= e($f['file_path']) ?>" target="_blank">🎬 видео</a>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+            <form method="post" action="max_report_review.php" class="inline-form-row">
+                <?= csrf_field() ?>
+                <input type="hidden" name="report_id" value="<?= (int) $r['id'] ?>">
+                <input type="text" name="comment" placeholder="Комментарий (нужен при «не принято»/«частично»)" style="flex:1;min-width:220px;">
+                <button type="submit" name="verdict" value="approved" class="btn btn-success">Принято</button>
+                <button type="submit" name="verdict" value="partial" class="btn btn-warn">Частично</button>
+                <button type="submit" name="verdict" value="rejected" class="btn btn-danger">Не принято</button>
+            </form>
+        </div>
+    <?php endforeach; ?>
+    </div>
+<?php endif; ?>
+
+<?php if ($pendingSiteReports): ?>
+<h2>Отчёты, внесённые на сайте <span class="count-pill"><?= count($pendingSiteReports) ?></span></h2>
+    <div class="table-wrap">
+    <?php foreach ($pendingSiteReports as $r): ?>
+        <div class="form-card">
+            <div class="mechanic-card-head">
+                <strong><?= e($r['full_name']) ?></strong>
+                <span class="hint"><?= e(role_label($r['author_role'])) ?> · <?= fmt_date($r['report_date']) ?></span>
+            </div>
+            <p class="report-summary-cell"><?= nl2br(e($r['summary'])) ?></p>
             <form method="post" action="daily_report_review.php" class="inline-form-row">
                 <?= csrf_field() ?>
                 <input type="hidden" name="report_id" value="<?= (int) $r['id'] ?>">

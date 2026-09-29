@@ -1,6 +1,8 @@
 <?php
 /**
- * Приём ежедневных отчётов от бота MAX.
+ * Приём отчётов от бота MAX. Каждое сообщение с триггером — отдельная
+ * строка в max_reports (проверяется по одному, не склеивается за день).
+ * daily_reports обновляется только для отметки присутствия (is_present).
  * Вызывается ботом (/home/claude/max), не браузером — вместо сессии/CSRF
  * проверяется заголовок X-Bot-Token (см. BOT_API_TOKEN в config.php).
  * Поддерживает ?dry_run=1 — прогоняет все проверки, ничего не пишет в БД.
@@ -37,7 +39,7 @@ $text = trim((string) ($_POST['text'] ?? ''));
 $maxMessageId = trim((string) ($_POST['max_message_id'] ?? ''));
 $maxChatId = trim((string) ($_POST['max_chat_id'] ?? ''));
 
-if ($maxUserId === '' || $text === '') {
+if ($maxUserId === '' || $text === '' || $maxMessageId === '' || $maxChatId === '') {
     json_fail('missing_fields', 400);
 }
 
@@ -65,17 +67,36 @@ $pdo = db();
 $userId = (int) $sender['id'];
 $today = date('Y-m-d');
 
-// append_daily_report_note() создаёт строку за сегодня (is_present=1),
-// либо дописывает текст к уже существующей — см. includes/functions.php.
-append_daily_report_note($userId, $text);
+// Отмечаем присутствие на сегодня, текст сюда больше не пишем — он теперь
+// живёт отдельной строкой в max_reports (см. ниже), чтобы каждое сообщение
+// проверялось по отдельности.
+$pdo->prepare(
+    "INSERT INTO daily_reports (user_id, report_date, is_present) VALUES (?, ?, 1)
+     ON DUPLICATE KEY UPDATE is_present = 1"
+)->execute([$userId, $today]);
 
-// Дополнительно проставляем данные для ответа в MAX и форсируем повторную
-// проверку, если отчёт за сегодня уже был проверен, а теперь пришёл ещё кусок.
-$upd = $pdo->prepare(
-    "UPDATE daily_reports
-        SET max_chat_id = ?, max_message_id = ?, review_status = 'pending'
-      WHERE user_id = ? AND report_date = ?"
-);
-$upd->execute([$maxChatId ?: null, $maxMessageId ?: null, $userId, $today]);
+try {
+    $ins = $pdo->prepare(
+        'INSERT INTO max_reports (user_id, report_date, text, max_chat_id, max_message_id)
+         VALUES (?, ?, ?, ?, ?)'
+    );
+    $ins->execute([$userId, $today, $text, $maxChatId, $maxMessageId]);
+    $reportId = (int) $pdo->lastInsertId();
+} catch (PDOException $ex) {
+    if ($ex->getCode() === '23000') {
+        // Дубликат max_message_id — это сообщение уже приходило раньше
+        // (например, бот переопросил его после перезапуска). Не ошибка.
+        echo json_encode(['ok' => true, 'duplicate' => true], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    throw $ex;
+}
 
-echo json_encode(['ok' => true], JSON_UNESCAPED_UNICODE);
+$filesResult = save_max_report_files($reportId, $_FILES['files'] ?? []);
+
+echo json_encode([
+    'ok' => true,
+    'report_id' => $reportId,
+    'files_saved' => $filesResult['saved'],
+    'file_errors' => $filesResult['errors'],
+], JSON_UNESCAPED_UNICODE);

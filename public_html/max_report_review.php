@@ -1,9 +1,8 @@
 <?php
 /**
- * Проверка ежедневного отчёта (принято / не принято / частично + комментарий).
- * Обычная форма (как остальные действия на report_today.php) — не AJAX.
- * Доступно admin и mechanic. Если отчёт пришёл из группы MAX — комментарий
- * уходит туда же ответом на исходное сообщение (includes/max_client.php).
+ * Проверка ОДНОГО сообщения-отчёта из чата MAX (принято/частично/не принято
+ * + комментарий). Каждое сообщение проверяется отдельно — см. bot_api.php,
+ * где каждое сообщение с триггером создаёт свою строку в max_reports.
  */
 require __DIR__ . '/includes/bootstrap.php';
 require __DIR__ . '/includes/max_client.php';
@@ -14,9 +13,6 @@ if (!in_array($user['role'], ['admin', 'mechanic'], true)) {
     die('Доступ запрещён.');
 }
 
-// Куда вернуться после проверки — со страницы отчёта или из табеля за
-// конкретный месяц. Разрешён только короткий список локальных страниц,
-// чтобы нельзя было подсунуть редирект на чужой сайт.
 $returnTo = (string) ($_POST['return_to'] ?? 'report_today.php');
 $allowedReturn = '/^(report_today\.php|timesheet\.php(\?year=\d{4}&month=\d{1,2})?|daily_report_view\.php\?user_id=\d+&date=\d{4}-\d{2}-\d{2})$/';
 if (!preg_match($allowedReturn, $returnTo)) {
@@ -43,38 +39,33 @@ if (in_array($verdict, ['rejected', 'partial'], true) && $comment === '') {
     redirect($returnTo);
 }
 
-$stmt = db()->prepare('SELECT * FROM daily_reports WHERE id = ?');
+$stmt = db()->prepare('SELECT * FROM max_reports WHERE id = ?');
 $stmt->execute([$reportId]);
 $report = $stmt->fetch();
 
 if (!$report) {
-    flash('error', 'Отчёт не найден.');
+    flash('error', 'Сообщение не найдено.');
     redirect($returnTo);
 }
 if ((int) $report['user_id'] === (int) $user['id']) {
-    flash('error', 'Нельзя проверять собственный отчёт.');
+    flash('error', 'Нельзя проверять собственное сообщение.');
     redirect($returnTo);
 }
 
 $upd = db()->prepare(
-    'UPDATE daily_reports
-        SET review_status = ?, review_comment = ?, reviewed_by = ?, reviewed_at = NOW()
-      WHERE id = ?'
+    'UPDATE max_reports SET review_status = ?, review_comment = ?, reviewed_by = ?, reviewed_at = NOW() WHERE id = ?'
 );
 $upd->execute([$verdict, $comment ?: null, $user['id'], $reportId]);
 
-$notified = false;
-if (!empty($report['max_chat_id']) && !empty($report['max_message_id'])) {
-    $verdictText = match ($verdict) {
-        'approved' => 'Отчёт принят.',
-        'rejected' => 'Отчёт не принят: ' . $comment,
-        'partial' => 'Принято частично: ' . $comment,
-    };
-    $notified = max_send_reply($report['max_chat_id'], $verdictText, $report['max_message_id']);
-}
+$verdictText = match ($verdict) {
+    'approved' => 'Отчёт принят.',
+    'rejected' => 'Отчёт не принят: ' . $comment,
+    'partial' => 'Принято частично: ' . $comment,
+};
+$notified = max_send_reply($report['max_chat_id'], $verdictText, $report['max_message_id']);
 
 $flashMessage = 'Проверка сохранена.';
-if (!empty($report['max_chat_id']) && !$notified) {
+if (!$notified) {
     $flashMessage .= ' Не удалось отправить ответ в MAX — смотрите лог сайта.';
 }
 flash('success', $flashMessage);

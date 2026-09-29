@@ -61,6 +61,19 @@ foreach ($periodReports as $r) {
     $grid[(int) $r['user_id']][$day] = $r;
 }
 
+$pendingCountStmt = $pdo->prepare(
+    "SELECT user_id, report_date, COUNT(*) AS pending_count
+       FROM max_reports
+      WHERE report_date BETWEEN ? AND ? AND review_status = 'pending'
+      GROUP BY user_id, report_date"
+);
+$pendingCountStmt->execute([$firstDay, $lastDay]);
+$pendingGrid = [];
+foreach ($pendingCountStmt->fetchAll() as $p) {
+    $day = (int) substr($p['report_date'], 8, 2);
+    $pendingGrid[(int) $p['user_id']][$day] = (int) $p['pending_count'];
+}
+
 $monthNames = [1=>'Январь',2=>'Февраль',3=>'Март',4=>'Апрель',5=>'Май',6=>'Июнь',7=>'Июль',8=>'Август',9=>'Сентябрь',10=>'Октябрь',11=>'Ноябрь',12=>'Декабрь'];
 
 $prevMonth = $month - 1; $prevYear = $year;
@@ -100,13 +113,14 @@ require __DIR__ . '/includes/header.php';
         <tr>
             <td class="timesheet-name-col"><?= e($m['full_name']) ?></td>
             <?php for ($d = 1; $d <= $daysInMonth; $d++): $cell = $grid[(int) $m['id']][$d] ?? null;
-                $pending = $cell && ($cell['review_status'] ?? 'pending') === 'pending';
-                $cellClass = $cell ? ($pending ? 'ts-pending' : ($cell['is_present'] ? 'ts-present' : 'ts-absent')) : 'ts-empty';
+                $pendingCount = $pendingGrid[(int) $m['id']][$d] ?? 0;
+                $cellClass = $cell ? ($pendingCount > 0 ? 'ts-pending' : ($cell['is_present'] ? 'ts-present' : 'ts-absent')) : 'ts-empty';
+                $dateStr = sprintf('%04d-%02d-%02d', $year, $month, $d);
             ?>
                 <td class="timesheet-cell <?= $cellClass ?>"
                     title="<?= $cell && $cell['summary'] ? e($cell['summary']) : '' ?>">
                     <?php if ($cell): ?>
-                        <a href="daily_report_view.php?id=<?= (int) $cell['id'] ?>"><?= $cell['is_present'] ? '✓' : '×' ?></a>
+                        <a href="daily_report_view.php?user_id=<?= (int) $m['id'] ?>&date=<?= $dateStr ?>"><?= $cell['is_present'] ? '✓' : '×' ?><?= $pendingCount > 1 ? ' (' . $pendingCount . ')' : '' ?></a>
                     <?php endif; ?>
                 </td>
             <?php endfor; ?>

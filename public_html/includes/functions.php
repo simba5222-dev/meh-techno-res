@@ -333,6 +333,77 @@ function save_task_photos(int $taskId, int $userId, array $filesInput): array
 }
 
 /**
+ * Сохранить фото/видео, присланные вместе с отчётом из чата MAX.
+ * Возвращает массив: ['saved' => int, 'errors' => string[]]
+ */
+function save_max_report_files(int $reportId, array $filesInput): array
+{
+    $saved = 0;
+    $errors = [];
+
+    if (empty($filesInput['name'][0])) {
+        return ['saved' => 0, 'errors' => []];
+    }
+
+    $imageExt = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+    $videoExt = ['mp4', 'mov', 'webm'];
+    $targetDir = rtrim(UPLOAD_DIR, '/') . '/../max_reports/' . $reportId;
+
+    if (!is_dir($targetDir)) {
+        if (!mkdir($targetDir, 0755, true) && !is_dir($targetDir)) {
+            return ['saved' => 0, 'errors' => ['Не удалось создать папку для загрузки файлов.']];
+        }
+    }
+
+    $count = count($filesInput['name']);
+    for ($i = 0; $i < $count; $i++) {
+        if ($filesInput['error'][$i] === UPLOAD_ERR_NO_FILE) {
+            continue;
+        }
+        if ($filesInput['error'][$i] !== UPLOAD_ERR_OK) {
+            $errors[] = 'Ошибка загрузки файла «' . $filesInput['name'][$i] . '».';
+            continue;
+        }
+        if ($filesInput['size'][$i] > MAX_UPLOAD_SIZE) {
+            $errors[] = 'Файл «' . $filesInput['name'][$i] . '» превышает допустимый размер.';
+            continue;
+        }
+
+        $ext = strtolower(pathinfo($filesInput['name'][$i], PATHINFO_EXTENSION));
+        if (in_array($ext, $imageExt, true)) {
+            $type = 'image';
+        } elseif (in_array($ext, $videoExt, true)) {
+            $type = 'video';
+        } else {
+            $errors[] = 'Файл «' . $filesInput['name'][$i] . '»: недопустимый формат.';
+            continue;
+        }
+
+        $newName = bin2hex(random_bytes(8)) . '.' . $ext;
+        $destPath = $targetDir . '/' . $newName;
+
+        if (move_uploaded_file($filesInput['tmp_name'][$i], $destPath)) {
+            $relativePath = 'uploads/max_reports/' . $reportId . '/' . $newName;
+            $stmt = db()->prepare('INSERT INTO max_report_files (max_report_id, file_path, file_type) VALUES (?,?,?)');
+            $stmt->execute([$reportId, $relativePath, $type]);
+            $saved++;
+        } else {
+            $errors[] = 'Не удалось сохранить файл «' . $filesInput['name'][$i] . '».';
+        }
+    }
+
+    return ['saved' => $saved, 'errors' => $errors];
+}
+
+/** Файлы, приложенные к сообщению-отчёту из MAX */
+function max_report_files(int $reportId): array
+{
+    $stmt = db()->prepare('SELECT * FROM max_report_files WHERE max_report_id = ? ORDER BY id');
+    $stmt->execute([$reportId]);
+    return $stmt->fetchAll();
+}
+
+/**
  * Добавить строку в ежедневный отчёт пользователя за сегодня
  * (например, автоматическую отметку о выполненной задаче).
  * Если отчёта за сегодня ещё нет — создаёт его (считая, что раз задача
