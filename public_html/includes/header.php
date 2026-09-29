@@ -25,6 +25,7 @@ $currentPage = basename($_SERVER['SCRIPT_NAME']);
             <a href="statuses.php" class="<?= $currentPage === 'statuses.php' ? 'active' : '' ?>">Статусы</a>
             <a href="tasks.php" class="<?= in_array($currentPage, ['tasks.php','task_view.php','task_create.php','task_edit.php']) ? 'active' : '' ?>">Задачи</a>
             <a href="timesheet.php" class="<?= $currentPage === 'timesheet.php' ? 'active' : '' ?>">Табель</a>
+            <a href="report_today.php" class="<?= $currentPage === 'report_today.php' ? 'active' : '' ?>">Проверка отчётов</a>
             <a href="reports.php" class="<?= $currentPage === 'reports.php' ? 'active' : '' ?>">Отчёты</a>
             <a href="users.php" class="<?= in_array($currentPage, ['users.php','user_edit.php']) ? 'active' : '' ?>">Сотрудники</a>
         <?php elseif ($user['role'] === 'manager'): ?>
