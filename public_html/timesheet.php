@@ -99,10 +99,15 @@ require __DIR__ . '/includes/header.php';
     <?php foreach ($mechanics as $m): ?>
         <tr>
             <td class="timesheet-name-col"><?= e($m['full_name']) ?></td>
-            <?php for ($d = 1; $d <= $daysInMonth; $d++): $cell = $grid[(int) $m['id']][$d] ?? null; ?>
-                <td class="timesheet-cell <?= $cell ? ($cell['is_present'] ? 'ts-present' : 'ts-absent') : 'ts-empty' ?>"
+            <?php for ($d = 1; $d <= $daysInMonth; $d++): $cell = $grid[(int) $m['id']][$d] ?? null;
+                $pending = $cell && ($cell['review_status'] ?? 'pending') === 'pending';
+                $cellClass = $cell ? ($pending ? 'ts-pending' : ($cell['is_present'] ? 'ts-present' : 'ts-absent')) : 'ts-empty';
+            ?>
+                <td class="timesheet-cell <?= $cellClass ?>"
                     title="<?= $cell && $cell['summary'] ? e($cell['summary']) : '' ?>">
-                    <?= $cell ? ($cell['is_present'] ? '✓' : '×') : '' ?>
+                    <?php if ($cell): ?>
+                        <a href="daily_report_view.php?id=<?= (int) $cell['id'] ?>"><?= $cell['is_present'] ? '✓' : '×' ?></a>
+                    <?php endif; ?>
                 </td>
             <?php endfor; ?>
         </tr>
@@ -110,7 +115,7 @@ require __DIR__ . '/includes/header.php';
     </tbody>
 </table>
 </div>
-<p class="hint">✓ — был на работе, × — не был, пусто — отчёт не подан.</p>
+<p class="hint">✓ — был на работе, × — не был, пусто — отчёт не подан. Жёлтая ячейка — отчёт ещё не проверен, нажмите на неё. Клик по любой заполненной ячейке открывает отчёт и проверку.</p>
 
 <h2>Добавить / изменить запись вручную</h2>
 <form method="post" class="form-card">

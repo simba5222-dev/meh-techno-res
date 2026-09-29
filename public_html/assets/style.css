@@ -313,6 +313,9 @@ input[type=checkbox], input[type=radio] { width: 20px; height: 20px; cursor: poi
 .ts-present { background: var(--success-bg); color: var(--success); }
 .ts-absent { background: var(--danger-bg); color: var(--danger); }
 .ts-empty { color: var(--text-muted); }
+.ts-pending { background: var(--warn-bg); color: var(--warn); }
+.timesheet-cell a { color: inherit; text-decoration: none; display: block; }
+.timesheet-cell a:hover { text-decoration: underline; }
 .report-summary-cell { white-space: normal; min-width: 260px; }
 
 /* ===== Отчёты: вкладки ===== */
